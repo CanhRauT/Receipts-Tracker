@@ -3,3 +3,8 @@
 # azure-monitor-opentelemetry
 
 azure-functions
+
+# Libraries added for the Smart Expense Tracker project
+azure-storage-blob
+azure-cosmos
+azure-ai-formrecognizer

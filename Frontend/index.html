@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Receipt Tracker</title>
+    <!-- CDN Links -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom styles and animations -->
+    <style>
+        /* FIX for "inline-styles" warning */
+        .receipt-preview-image {
+            max-height: 400px;
+        }
+        @keyframes rotation {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .loading-spinner-animation {
+            animation: rotation 1s linear infinite;
+        }
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.5s ease-out forwards;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="container mx-auto">
+        <!-- Main Application Container -->
+        <main class="max-w-lg mx-auto" id="app-container">
+
+            <!-- Upload Screen -->
+            <div id="uploadSection" class="bg-white rounded-lg shadow-lg p-8 text-center">
+                <i class="fas fa-receipt text-blue-600 text-5xl mb-4"></i>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">Smart Receipt Tracker</h1>
+                <p class="text-gray-600 mb-6">Select an image file to begin analyzing your receipt.</p>
+                <!-- FIX for "Form elements must have labels" -->
+                <label for="imageInput" class="w-full inline-block px-6 py-3 rounded-lg font-semibold transition-colors duration-200 bg-blue-600 text-white hover:bg-blue-700 cursor-pointer">
+                    <i class="fas fa-image mr-2"></i>Choose Image File
+                </label>
+                <input type="file" id="imageInput" accept="image/*" class="hidden">
+            </div>
+
+            <!-- User Message/Error Display -->
+            <div id="messageSection" class="hidden p-4 my-4 text-sm rounded-lg"></div>
+
+            <!-- Preview Screen -->
+            <div id="previewSection" class="hidden bg-white rounded-lg shadow-lg p-6 my-6 animate-fade-in">
+                <h3 class="text-xl font-semibold mb-4 text-center">Preview</h3>
+                <div class="flex flex-col items-center">
+                    <!-- FIX for "Images must have alternative text" & "inline-styles" -->
+                    <img id="previewImage" class="max-w-full h-auto rounded-lg mb-4 border receipt-preview-image" alt="Preview of the receipt to be uploaded">
+                    <div class="flex space-x-4">
+                        <button data-action="submit-receipt" class="px-6 py-2 rounded-lg font-semibold transition-colors duration-200 bg-green-600 text-white hover:bg-green-700"><i class="fas fa-upload mr-2"></i>Process Receipt</button>
+                        <button data-action="clear-preview" class="px-6 py-2 rounded-lg font-semibold transition-colors duration-200 bg-gray-500 text-white hover:bg-gray-600"><i class="fas fa-trash mr-2"></i>Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Screen -->
+            <div id="loadingSection" class="hidden bg-white rounded-lg shadow-lg p-8 my-6 text-center animate-fade-in">
+                <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full inline-block loading-spinner-animation"></div>
+                <h3 class="text-xl font-semibold mt-4 mb-2">Processing Receipt...</h3>
+                <p class="text-gray-600">Please wait while we analyze your receipt.</p>
+            </div>
+
+            <!-- Results Screen -->
+            <div id="resultsSection" class="hidden bg-white rounded-lg shadow-lg p-6 my-6 animate-fade-in">
+                <h3 class="text-xl font-semibold mb-4"><i class="fas fa-check-circle text-green-600 mr-2"></i>Analysis Results</h3>
+                <div id="resultsContent"></div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- JavaScript files (config.js must be first) -->
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

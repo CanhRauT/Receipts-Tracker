@@ -1,11 +1,22 @@
-### Send a receipt for processing
-POST http://localhost:7071/api/ProcessReceipt
+# ### Send a receipt for processing
+# POST http://localhost:7071/api/ProcessReceipt
+# Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+# ------WebKitFormBoundary7MA4YWxkTrZu0gW
+# Content-Disposition: form-data; name="image"; filename="costco_receipt_img.png"
+# Content-Type: image/png
+
+# < C:\Users\BokChoy\projects\ReceiptTracker\costco_receipt_img.png
+
+# ------WebKitFormBoundary7MA4YWxkTrZu0gW-- 
+
+### Test deployed function
+POST https://func-receipt-tracker-b8gxcue7bxhgc5bq.westus3-01.azurewebsites.net/api/processreceipt
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 
 ------WebKitFormBoundary7MA4YWxkTrZu0gW
 Content-Disposition: form-data; name="image"; filename="costco_receipt_img.png"
 Content-Type: image/png
 
-< C:\Users\BokChoy\projects\ReceiptTracker\costco_receipt_img.png
-
-------WebKitFormBoundary7MA4YWxkTrZu0gW-- 
+< ./costco_receipt_img.png
+------WebKitFormBoundary7MA4YWxkTrZu0gW--

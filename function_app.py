@@ -16,7 +16,7 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 # v2 model: Use a decorator to define the trigger
 # This says: "This function is an HTTP endpoint available at the URL path /api/ProcessReceipt"
-@app.route(route="ProcessReceipt")
+@app.route(route="ProcessReceipt", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
 def ProcessReceipt(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
 
@@ -97,7 +97,7 @@ def ProcessReceipt(req: func.HttpRequest) -> func.HttpResponse:
         logging.error(f"Error during document analysis: {e}")
         return func.HttpResponse("Error analyzing the receipt.", status_code=500)
 
-# 5. --- SAVE DATA TO COSMOS DB ---
+    # 5. --- SAVE DATA TO COSMOS DB ---
     try:
         cosmos_client = CosmosClient.from_connection_string(cosmos_connection_string)
         

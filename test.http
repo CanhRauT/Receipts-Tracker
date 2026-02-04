@@ -11,12 +11,61 @@
 # ------WebKitFormBoundary7MA4YWxkTrZu0gW-- 
 
 ### Test deployed function
-POST https://func-receipt-tracker-b8gxcue7bxhgc5bq.westus3-01.azurewebsites.net/api/processreceipt
+# ====================================================================
+# API TEST SUITE FOR RECEIPT TRACKER
+# ====================================================================
+
+# --------------------------------------------------------------------
+# 1. Process a new receipt (CREATE)
+# --------------------------------------------------------------------
+# This request sends an image file to the ProcessReceipt function.
+# A successful response will be a JSON object with the extracted data.
+###
+### Process a new receipt
+POST https://func-receipt-tracker-b8gxcue7bxhgc5bq.westus3-01.azurewebsites.net/api/ProcessReceipt
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 
 ------WebKitFormBoundary7MA4YWxkTrZu0gW
 Content-Disposition: form-data; name="image"; filename="costco_receipt_img.png"
 Content-Type: image/png
 
+# IMPORTANT: This line assumes you have a file named 'costco_receipt_img.png'
+# in the same folder as this test.http file.
 < ./costco_receipt_img.png
+
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+
+# --------------------------------------------------------------------
+# 2. Get all receipts (READ)
+# --------------------------------------------------------------------
+# This request gets a list of all receipts currently in the database.
+# A successful response will be a JSON array of receipt objects.
+###
+### Get all receipts
+GET https://func-receipt-tracker-b8gxcue7bxhgc5bq.westus3-01.azurewebsites.net/api/GetReceipts
+
+
+# --------------------------------------------------------------------
+# 3. Delete a specific receipt (DELETE)
+# --------------------------------------------------------------------
+# This request deletes a single receipt by its ID.
+# To use this, you must first get an ID from one of the other requests.
+# A successful response will be a '204 No Content' status.
+###
+### Delete a receipt by its ID
+# ==> IMPORTANT: Replace 'paste-your-receipt-id-here' with a real ID.
+DELETE https://func-receipt-tracker-b8gxcue7bxhgc5bq.westus3-01.azurewebsites.net/api/DeleteReceipt/18a0cf8c-8292-4d5c-9e58-b6745015651f
+
+###
+# NOTE: The method is POST, not DELETE, because we are sending a request body.
+POST https://func-receipt-tracker-b8gxcue7bxhgc5bq.westus3-01.azurewebsites.net/api/DeleteMultipleReceipts
+Content-Type: application/json
+
+{
+    "ids": [
+        "9b5fb732-cd2a-4f22-b862-82da9a7b04d2",
+        "4040b9b5-cbb8-416b-b044-1e212ab2179a",
+        "dae675c7-1814-420d-9f02-db11bdfcbbb2"
+    ]
+}

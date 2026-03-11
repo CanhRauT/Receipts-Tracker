@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Receipt Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="page-wrapper">
+
+    <!-- NAV -->
+    <nav>
+        <a class="nav-brand" href="index.html">
+            <i class="fas fa-receipt" style="color: var(--accent)"></i>
+            ReceiptTracker
+        </a>
+        <div class="nav-links">
+            <span class="user-badge" id="userBadge">
+                <i class="fas fa-circle-notch fa-spin" style="font-size:0.65rem"></i>
+            </span>
+
+            <a href="/.auth/logout">Logout</a>
+        </div>
+        <button class="hamburger" id="hamburger" aria-label="Toggle menu">☰</button>
+    </nav>
+
+    <!-- Mobile menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="dashboard.html" class="nav-active"><i class="fas fa-receipt" style="margin-right:0.5rem"></i>Receipts</a>
+        <a href="dashboard.html#analytics"><i class="fas fa-chart-pie" style="margin-right:0.5rem"></i>Dashboard</a>
+        <a href="profile.html"><i class="fas fa-user" style="margin-right:0.5rem"></i>Profile</a>
+        <a href="/.auth/logout"><i class="fas fa-sign-out-alt" style="margin-right:0.5rem"></i>Logout</a>
+    </div>
+
+    <!-- TABS -->
+    <div class="tab-bar">
+        <button class="tab-btn active" data-tab="analytics">
+            <i class="fas fa-chart-line" style="margin-right:0.3rem"></i> Analytics
+        </button>
+        <button class="tab-btn" data-tab="receipts">
+            <i class="fas fa-list" style="margin-right:0.3rem"></i> All Receipts
+        </button>
+        <button class="tab-btn" data-tab="upload">
+            <i class="fas fa-plus" style="margin-right:0.3rem"></i> Add Receipt
+        </button>
+    </div>
+
+    <div class="main">
+
+        <!-- ANALYTICS TAB -->
+        <div class="tab-panel active" id="tab-analytics">
+            <div class="filter-bar">
+                <span class="filter-label">View by:</span>
+                <button class="filter-btn active" data-period="week">Weekly</button>
+                <button class="filter-btn" data-period="month">Monthly</button>
+                <button class="filter-btn" data-period="year">Yearly</button>
+            </div>
+            <div class="kpi-grid">
+                <div class="kpi-card" style="--card-accent: var(--accent)">
+                    <div class="kpi-label">Total Spent</div>
+                    <div class="kpi-value" id="kpiTotal">—</div>
+                    <div class="kpi-sub">all time</div>
+                </div>
+                <div class="kpi-card" style="--card-accent: var(--accent2)">
+                    <div class="kpi-label">Receipts</div>
+                    <div class="kpi-value" id="kpiCount">—</div>
+                    <div class="kpi-sub">processed</div>
+                </div>
+                <div class="kpi-card" style="--card-accent: var(--accent4)">
+                    <div class="kpi-label">Avg per Receipt</div>
+                    <div class="kpi-value" id="kpiAvg">—</div>
+                    <div class="kpi-sub">average transaction</div>
+                </div>
+                <div class="kpi-card" style="--card-accent: var(--accent3)">
+                    <div class="kpi-label">Top Merchant</div>
+                    <div class="kpi-value" style="font-size:1.1rem; padding-top:0.4rem" id="kpiTop">—</div>
+                    <div class="kpi-sub" id="kpiTopSub">by total spend</div>
+                </div>
+            </div>
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">Spending Over Time</div>
+                        <span class="chart-badge" id="spendingBadge">weekly</span>
+                    </div>
+                    <div class="chart-container" style="height:240px"><canvas id="lineChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">By Merchant</div>
+                        <span class="chart-badge">top 5</span>
+                    </div>
+                    <div class="chart-container" style="height:240px"><canvas id="donutChart"></canvas></div>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title">Spending Distribution</div>
+                    <span class="chart-badge" id="barBadge">by period</span>
+                </div>
+                <div class="chart-container" style="height:200px"><canvas id="barChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- RECEIPTS TAB -->
+        <div class="tab-panel" id="tab-receipts">
+            <div class="section-heading">All Receipts</div>
+            <div class="section-sub">Your full transaction history</div>
+            <div id="receiptsMsg" class="msg"></div>
+            <div class="filter-bar" style="margin-bottom:1rem; flex-wrap:wrap; gap:0.6rem">
+                <input type="text" id="searchInput" placeholder="🔍 Search merchant..." class="filter-input" style="min-width:180px">
+                <select id="filterMerchant" class="filter-select"><option value="">All Merchants</option></select>
+                <select id="filterMonth"    class="filter-select"><option value="">All Months</option></select>
+                <select id="filterYear"     class="filter-select"><option value="">All Years</option></select>
+                <button id="clearFiltersBtn" class="filter-btn" style="margin-left:auto">Clear Filters</button>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header">
+                    <span id="filteredCount" style="font-size:0.75rem; color:var(--text-muted)"></span>
+                    <button class="btn-danger" id="deleteSelectedBtn" style="display:none">
+                        <i class="fas fa-trash-alt" style="margin-right:0.3rem"></i> Delete Selected
+                    </button>
+                </div>
+                <div id="tableLoading" class="spinner"></div>
+                <div id="tableEmpty" class="empty-state" style="display:none">
+                    <i class="fas fa-folder-open"></i>
+                    <p>No receipts match your filters.</p>
+                </div>
+                <div id="tableWrap" style="overflow-x:auto; display:none">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="selectAll" style="accent-color:var(--accent)"></th>
+                                <th>Merchant</th><th>Date</th><th>Total</th>
+                                <th style="text-align:right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- UPLOAD TAB -->
+        <div class="tab-panel" id="tab-upload">
+            <div class="section-heading">Add Receipt</div>
+            <div class="section-sub">Upload a receipt image to extract and save data automatically</div>
+            <div id="uploadMsg" class="msg"></div>
+            <div style="max-width:560px">
+                <div id="uploadZone" class="upload-zone">
+                    <i class="fas fa-cloud-upload-alt" style="font-size:2.5rem; color:var(--accent); margin-bottom:1rem; display:block"></i>
+                    <div style="font-family:var(--font-display); font-weight:700; font-size:1rem; margin-bottom:0.4rem">Drop your receipt here</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:1.5rem">or click to browse — PNG, JPG, WEBP supported</div>
+                    <label for="imageInput" class="btn-primary" style="cursor:pointer">
+                        <i class="fas fa-image" style="margin-right:0.3rem"></i> Choose File
+                    </label>
+                    <input type="file" id="imageInput" accept="image/*" style="display:none">
+                </div>
+                <div id="previewZone" style="display:none">
+                    <div class="chart-card" style="text-align:center">
+                        <img id="previewImg" alt="Preview">
+                        <div style="display:flex; gap:0.75rem; justify-content:center; margin-top:1.25rem">
+                            <button class="btn-primary" id="processBtn"><i class="fas fa-magic" style="margin-right:0.3rem"></i> Process Receipt</button>
+                            <button class="filter-btn" id="cancelBtn">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="processingZone" style="display:none" class="chart-card">
+                    <div class="spinner"></div>
+                    <div style="text-align:center; font-size:0.85rem; color:var(--text-muted)">Analyzing receipt with AI...</div>
+                </div>
+                <div id="resultZone" style="display:none" class="chart-card">
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem">
+                        <i class="fas fa-check-circle" style="color:var(--accent)"></i>
+                        <span style="font-family:var(--font-display); font-weight:700">Receipt Processed</span>
+                    </div>
+                    <div id="resultContent"></div>
+                    <button class="btn-primary" id="addAnotherBtn" style="margin-top:1.25rem">
+                        <i class="fas fa-plus" style="margin-right:0.3rem"></i> Add Another
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- RECEIPT DETAIL MODAL -->
+<div class="modal-overlay" id="receiptModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <div class="chart-title"><i class="fas fa-receipt" style="color:var(--accent); margin-right:0.5rem"></i>Receipt Detail</div>
+            <button class="modal-close" id="modalClose">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="detail-grid" id="modalDetails"></div>
+            <div id="modalImageWrap"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+let allReceipts = [], selectedIds = new Set(), currentPeriod = 'week';
+let lineChartInst, donutChartInst, barChartInst;
+const COLORS = ['#4fffb0','#6c8eff','#ff6b6b','#ffd166','#c084fc','#38bdf8'];
+
+Chart.defaults.color = '#6b7280';
+Chart.defaults.borderColor = '#252a3a';
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 11;
+
+document.addEventListener('DOMContentLoaded', async () => {
+    document.getElementById('hamburger').addEventListener('click', () =>
+        document.getElementById('mobileMenu').classList.toggle('open'));
+    await checkAuth();
+    setupTabNav(); setupPeriodFilters(); setupUpload(); setupTable();
+    await loadReceipts(); populateFilterDropdowns(); renderAnalytics();
+});
+
+async function checkAuth() {
+    try {
+        const { clientPrincipal } = await (await fetch('/.auth/me')).json();
+        const badge = document.getElementById('userBadge');
+        if (!clientPrincipal) { badge.innerHTML = 'Not logged in'; window.location.href = '/index.html'; return; }
+        badge.innerHTML = `<i class="fas fa-user" style="font-size:0.65rem; margin-right:0.35rem"></i>${clientPrincipal.userDetails}`;
+    } catch(e) { console.warn('Auth check failed', e); }
+}
+
+async function loadReceipts() {
+    try {
+        const res = await fetch('/api/GetReceipts');
+        if (!res.ok) throw new Error(res.status);
+        allReceipts = await res.json();
+    } catch(e) { console.error('Failed to load receipts', e); allReceipts = []; }
+}
+
+function setupTabNav() {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tab = btn.dataset.tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('active');
+            if (tab === 'receipts') { populateFilterDropdowns(); renderTable(getFilteredReceipts()); }
+            if (tab === 'analytics') renderAnalytics();
+        });
+    });
+}
+
+function setupPeriodFilters() {
+    document.querySelectorAll('[data-period]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('[data-period]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentPeriod = btn.dataset.period;
+            renderAnalytics();
+        });
+    });
+}
+
+function renderAnalytics() {
+    if (!allReceipts.length) return;
+    const total = allReceipts.reduce((s,r) => s+(r.total||0), 0);
+    const merchantTotals = {};
+    allReceipts.forEach(r => { const m = r.merchantName||'Unknown'; merchantTotals[m]=(merchantTotals[m]||0)+(r.total||0); });
+    const topMerchant = Object.entries(merchantTotals).sort((a,b)=>b[1]-a[1])[0];
+
+    document.getElementById('kpiTotal').textContent = '$'+total.toFixed(2);
+    document.getElementById('kpiCount').textContent = allReceipts.length;
+    document.getElementById('kpiAvg').textContent = '$'+(total/allReceipts.length).toFixed(2);
+    document.getElementById('kpiTop').textContent = topMerchant ? topMerchant[0] : '—';
+    document.getElementById('kpiTopSub').textContent = topMerchant ? `$${topMerchant[1].toFixed(2)} total` : '';
+
+    const {labels,values} = buildTimeSeries(currentPeriod);
+    document.getElementById('spendingBadge').textContent = currentPeriod;
+    document.getElementById('barBadge').textContent = `by ${currentPeriod}`;
+
+    destroyChart(lineChartInst);
+    lineChartInst = new Chart(document.getElementById('lineChart'), { type:'line', data:{labels,datasets:[{label:'Spending',data:values,borderColor:'#4fffb0',backgroundColor:'rgba(76,255,176,0.07)',fill:true,tension:0.4,pointBackgroundColor:'#4fffb0',pointRadius:4,pointHoverRadius:6,borderWidth:2}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' $'+ctx.raw.toFixed(2)}}},scales:{x:{grid:{color:'#252a3a'}},y:{grid:{color:'#252a3a'},ticks:{callback:v=>'$'+v}}}} });
+
+    const topMerchants = Object.entries(merchantTotals).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    destroyChart(donutChartInst);
+    donutChartInst = new Chart(document.getElementById('donutChart'), { type:'doughnut', data:{labels:topMerchants.map(m=>m[0]),datasets:[{data:topMerchants.map(m=>m[1]),backgroundColor:COLORS,borderColor:'#141720',borderWidth:3,hoverOffset:6}]}, options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{padding:12,boxWidth:10,font:{size:10}}},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: $${ctx.raw.toFixed(2)}`}}}} });
+
+    destroyChart(barChartInst);
+    barChartInst = new Chart(document.getElementById('barChart'), { type:'bar', data:{labels,datasets:[{label:'Spending',data:values,backgroundColor:values.map((_,i)=>i===values.length-1?'#4fffb0':'rgba(108,142,255,0.5)'),borderColor:values.map((_,i)=>i===values.length-1?'#4fffb0':'#6c8eff'),borderWidth:1,borderRadius:4}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' $'+ctx.raw.toFixed(2)}}},scales:{x:{grid:{display:false}},y:{grid:{color:'#252a3a'},ticks:{callback:v=>'$'+v}}}} });
+}
+
+function destroyChart(inst) { if (inst) inst.destroy(); }
+
+function buildTimeSeries(period) {
+    const buckets = {};
+    allReceipts.forEach(r => {
+        if (!r.transactionDate || r.transactionDate==='N/A') return;
+        const d = new Date(r.transactionDate); if (isNaN(d)) return;
+        let key;
+        if (period==='week') { const m=new Date(d); m.setDate(d.getDate()-((d.getDay()+6)%7)); key=m.toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+        else if (period==='month') key=d.toLocaleDateString('en-US',{month:'short',year:'2-digit'});
+        else key=d.getFullYear().toString();
+        buckets[key]=(buckets[key]||0)+(r.total||0);
+    });
+    const sorted=Object.entries(buckets).sort((a,b)=>new Date(a[0])-new Date(b[0]));
+    return {labels:sorted.map(e=>e[0]),values:sorted.map(e=>parseFloat(e[1].toFixed(2)))};
+}
+
+function populateFilterDropdowns() {
+    const merchants=[...new Set(allReceipts.map(r=>r.merchantName).filter(Boolean))].sort();
+    const years=[...new Set(allReceipts.map(r=>{const d=new Date(r.transactionDate);return isNaN(d)?null:d.getFullYear();}).filter(Boolean))].sort((a,b)=>b-a);
+    const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    document.getElementById('filterMerchant').innerHTML='<option value="">All Merchants</option>'+merchants.map(m=>`<option value="${m}">${m}</option>`).join('');
+    document.getElementById('filterMonth').innerHTML='<option value="">All Months</option>'+MONTHS.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+    document.getElementById('filterYear').innerHTML='<option value="">All Years</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');
+}
+
+function getFilteredReceipts() {
+    const q=(document.getElementById('searchInput').value||'').toLowerCase();
+    const merchant=document.getElementById('filterMerchant').value;
+    const month=document.getElementById('filterMonth').value;
+    const year=document.getElementById('filterYear').value;
+    return allReceipts.filter(r=>{
+        const d=new Date(r.transactionDate);
+        if(q&&!(r.merchantName||'').toLowerCase().includes(q)) return false;
+        if(merchant&&r.merchantName!==merchant) return false;
+        if(month&&(isNaN(d)||d.getMonth()+1!==parseInt(month))) return false;
+        if(year&&(isNaN(d)||d.getFullYear()!==parseInt(year))) return false;
+        return true;
+    });
+}
+
+function setupTable() {
+    ['searchInput','filterMerchant','filterMonth','filterYear'].forEach(id=>{
+        document.getElementById(id).addEventListener('change',applyFilters);
+        document.getElementById(id).addEventListener('input',applyFilters);
+    });
+    document.getElementById('clearFiltersBtn').addEventListener('click',()=>{
+        ['searchInput','filterMerchant','filterMonth','filterYear'].forEach(id=>document.getElementById(id).value='');
+        applyFilters();
+    });
+    document.getElementById('selectAll').addEventListener('change',e=>{
+        const checked=e.target.checked;
+        document.querySelectorAll('.row-check').forEach(cb=>{cb.checked=checked; if(checked)selectedIds.add(cb.dataset.id);else selectedIds.delete(cb.dataset.id);});
+        updateDeleteBtn();
+    });
+    document.getElementById('deleteSelectedBtn').addEventListener('click',async()=>await deleteReceipts(Array.from(selectedIds)));
+    document.getElementById('modalClose').addEventListener('click',closeModal);
+    document.getElementById('receiptModal').addEventListener('click',e=>{if(e.target===document.getElementById('receiptModal'))closeModal();});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+}
+
+function applyFilters() { renderTable(getFilteredReceipts()); }
+
+function renderTable(receipts) {
+    const loading=document.getElementById('tableLoading'), empty=document.getElementById('tableEmpty'), wrap=document.getElementById('tableWrap'), body=document.getElementById('tableBody'), countEl=document.getElementById('filteredCount');
+    loading.style.display='none'; countEl.textContent=`${receipts.length} receipt${receipts.length!==1?'s':''}`;
+    if(!receipts.length){empty.style.display='block';wrap.style.display='none';return;}
+    empty.style.display='none'; wrap.style.display='block';
+    body.innerHTML=receipts.map(r=>`<tr><td><input type="checkbox" class="row-check" data-id="${r.id}" ${selectedIds.has(r.id)?'checked':''} style="accent-color:var(--accent)"></td><td><span class="badge-merchant">${r.merchantName||'N/A'}</span></td><td style="color:var(--text-muted)">${r.transactionDate||'N/A'}</td><td class="amount-positive">$${(r.total||0).toFixed(2)}</td><td style="text-align:right;display:flex;gap:0.5rem;justify-content:flex-end"><button class="filter-btn view-btn" data-id="${r.id}" style="color:var(--accent2);border-color:rgba(108,142,255,0.3)"><i class="fas fa-eye"></i></button><button class="btn-danger delete-one-btn" data-id="${r.id}">Delete</button></td></tr>`).join('');
+    body.querySelectorAll('.row-check').forEach(cb=>cb.addEventListener('change',e=>{if(e.target.checked)selectedIds.add(e.target.dataset.id);else selectedIds.delete(e.target.dataset.id);updateDeleteBtn();}));
+    body.querySelectorAll('.delete-one-btn').forEach(btn=>btn.addEventListener('click',async()=>await deleteReceipts([btn.dataset.id])));
+    body.querySelectorAll('.view-btn').forEach(btn=>btn.addEventListener('click',()=>{const r=allReceipts.find(r=>r.id===btn.dataset.id);if(r)openModal(null,r);}));
+}
+
+function updateDeleteBtn() {
+    const btn=document.getElementById('deleteSelectedBtn');
+    btn.style.display=selectedIds.size>0?'inline-block':'none';
+    btn.innerHTML=`<i class="fas fa-trash-alt" style="margin-right:0.3rem"></i> Delete Selected (${selectedIds.size})`;
+}
+
+function openModal(imageUrl, receipt) {
+    const details=document.getElementById('modalDetails'), imgWrap=document.getElementById('modalImageWrap');
+    if(receipt){
+        details.innerHTML=`<div class="detail-item">
+            <div class="label">Merchant</div><div class="value">${receipt.merchantName||'N/A'}</div>
+            </div>
+            <div class="detail-item"><div class="label">Date</div>
+            <div class="value">${receipt.transactionDate||'N/A'}</div>
+            </div><div class="detail-item"><div class="label">
+                Total</div>
+                <div class="value" style="color:var(--accent);font-weight:600;font-size:1.1rem">$${(receipt.total||0).toFixed(2)}</div>
+                </div>
+                <div class="detail-item"></div></div>`;
+        imgWrap.innerHTML=receipt.originalImageUrl?`<a href="${receipt.originalImageUrl}" target="_blank"><img src="${receipt.originalImageUrl}" class="modal-receipt-img" alt="Receipt image"></a>`:'<p style="color:var(--text-muted);font-size:0.8rem;margin-top:1rem">No image available.</p>';
+    } else if(imageUrl){
+        details.innerHTML='';
+        imgWrap.innerHTML=`<a href="${imageUrl}" target="_blank"><img src="${imageUrl}" class="modal-receipt-img" alt="Receipt image"></a>`;
+    }
+    document.getElementById('receiptModal').classList.add('open');
+    document.body.style.overflow='hidden';
+}
+
+function closeModal() { document.getElementById('receiptModal').classList.remove('open'); document.body.style.overflow=''; }
+
+async function deleteReceipts(ids) {
+    if(!ids.length) return;
+    if(!confirm(`Delete ${ids.length>1?ids.length+' receipts':'this receipt'}?`)) return;
+    const msg=document.getElementById('receiptsMsg');
+    showMsg(msg,'Deleting...','success');
+    try {
+        const isBulk=ids.length>1;
+        const url=isBulk?'/api/DeleteMultipleReceipts':`/api/DeleteReceipt/${encodeURIComponent(ids[0])}`;
+        const res=await fetch(url,{method:isBulk?'POST':'DELETE',body:isBulk?JSON.stringify({ids}):null,headers:isBulk?{'Content-Type':'application/json'}:{}});
+        if(!res.ok&&res.status!==204) throw new Error(res.status);
+        showMsg(msg,'Deleted successfully.','success');
+        selectedIds.clear(); document.getElementById('selectAll').checked=false; updateDeleteBtn();
+        await loadReceipts(); renderTable(allReceipts); renderAnalytics();
+    } catch(e){ showMsg(msg,'Delete failed: '+e.message,'error'); }
+}
+
+let capturedFile=null;
+
+function setupUpload() {
+    const input=document.getElementById('imageInput'), zone=document.getElementById('uploadZone');
+    input.addEventListener('change',e=>{const f=e.target.files[0];if(f)showPreview(f);});
+    zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('dragging');});
+    zone.addEventListener('dragleave',()=>zone.classList.remove('dragging'));
+    zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('dragging');const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))showPreview(f);});
+    document.getElementById('processBtn').addEventListener('click',processReceipt);
+    document.getElementById('cancelBtn').addEventListener('click',resetUpload);
+    document.getElementById('addAnotherBtn').addEventListener('click',()=>{resetUpload();loadReceipts();});
+}
+
+function showPreview(file) {
+    capturedFile=file; document.getElementById('previewImg').src=URL.createObjectURL(file);
+    document.getElementById('uploadZone').style.display='none'; document.getElementById('previewZone').style.display='block';
+    document.getElementById('processingZone').style.display='none'; document.getElementById('resultZone').style.display='none';
+}
+
+function resetUpload() {
+    capturedFile=null; document.getElementById('imageInput').value=''; document.getElementById('previewImg').src='';
+    document.getElementById('uploadZone').style.display='block'; document.getElementById('previewZone').style.display='none';
+    document.getElementById('processingZone').style.display='none'; document.getElementById('resultZone').style.display='none';
+}
+
+async function processReceipt() {
+    if(!capturedFile) return;
+    document.getElementById('previewZone').style.display='none'; document.getElementById('processingZone').style.display='block';
+    const msg=document.getElementById('uploadMsg');
+    try {
+        const formData=new FormData(); formData.append('image',capturedFile);
+        const res=await fetch('/api/ProcessReceipt',{method:'POST',body:formData});
+        if(!res.ok) throw new Error(`Server error ${res.status}`);
+        const data=await res.json();
+        document.getElementById('processingZone').style.display='none'; document.getElementById('resultZone').style.display='block';
+        document.getElementById('resultContent').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;font-size:0.82rem"><div><div style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;margin-bottom:0.3rem">Merchant</div><div style="color:var(--text)">${data.merchantName||'N/A'}</div></div><div><div style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;margin-bottom:0.3rem">Date</div><div style="color:var(--text)">${data.transactionDate||'N/A'}</div></div><div><div style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;margin-bottom:0.3rem">Total</div><div style="color:var(--accent);font-weight:600;font-size:1.1rem">$${(data.total||0).toFixed(2)}</div></div><div></div></div>${data.originalImageUrl?`<div style="margin-top:1rem"><a href="${data.originalImageUrl}" target="_blank"><img src="${data.originalImageUrl}" style="width:100%;max-height:500px;object-fit:contain;border-radius:8px;border:1px solid var(--border);cursor:zoom-in" onclick="openModal('${data.originalImageUrl}');return false;"></a></div>`:''}`;
+        await loadReceipts(); renderAnalytics();
+        showMsg(msg,'Receipt saved successfully!','success');
+    } catch(e){ document.getElementById('processingZone').style.display='none'; document.getElementById('uploadZone').style.display='block'; showMsg(msg,'Failed: '+e.message,'error'); }
+}
+
+function showMsg(el,text,type){ el.textContent=text; el.className=`msg ${type} show`; setTimeout(()=>el.classList.remove('show'),4000); }
+</script>
+</body>
+</html>
